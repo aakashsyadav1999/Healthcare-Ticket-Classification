@@ -1,0 +1,13 @@
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+openpyxl
+ipykernel
+xgboost
+pymongo
+sqlalchemy
+python-dotenv
+pymssql
+pyodbc
