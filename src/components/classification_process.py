@@ -13,6 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.entities.config import GeminiConfig
 from src.logger import logging
+from src.utils.common import CommonUtils
 from src.exceptions import CustomException
 from pymongo import MongoClient
 from dotenv import load_dotenv, find_dotenv
@@ -60,7 +61,7 @@ class ClassificationInput(BaseModel):
     
 #Example ticket for the classification process
 ticket_1 = {
-    "patient_id": '123',
+    "patient_id": 123,
     "ticket": 'I am feeling very bad and need medical advice. I also need medical transport to the hospital.'
 }
 ticket_2 = {
@@ -73,17 +74,7 @@ class Gemini:
     def __init__(self):
         
         self.google_api = GeminiConfig()
-        
-    def mongo_connection(self):
-            mongo_host = os.getenv("MONGODB_URI")
-            mongo_port = int(os.getenv("MONGODB_PORT"))
-            mongo_db = os.getenv("MONGODB")
-            mongo_collection = os.getenv("MONGO_COLLECTION")
-            client = MongoClient(mongo_host, mongo_port)
-            db = client[mongo_db]
-            collection = db[mongo_collection]
-            return collection
-        
+        self.common_utils = CommonUtils()
 
     def gemini_api(self):
         """
@@ -136,26 +127,42 @@ class Gemini:
             response = {str(key): str(value) if not isinstance(value, (str, list)) else value for key, value in response.items()}
             response = {key.replace("$", "_").replace(".", "_"): value for key, value in response.items()}
             logging.info(f"Response to be inserted into database: {response}")
-            collection = self.mongo_connection()
-            collection.insert_one(response)
+            collection = self.common_utils.insert_main_table()
+            self.common_utils.close_connection()
             logging.info(f"Response inserted into database: {response}")
         except Exception as e:
             logging.error(f"Error in inserting into database: {str(e)}")
             return f"Error: {str(e)}"
 
 #TODO: Mark ticket into the database as processed
-    # def mark_ticket_as_processed(self, ticket_id: str):
-    #     """
-    #     Function to mark the ticket as processed
-    #     """
-    #     try:
-    #         collection = self.mongo_connection()
-    #         collection.update_one({"ticket_id": ticket_id}, {"$set": {"processed": True}})
-    #         logging.info(f"Ticket with ID {ticket_id} marked as processed")
-    #     except Exception as e:
-    #         logging.error(f"Error in marking ticket as processed: {str(e)}")
-    #         return f"Error: {str(e)}"
-        
+    def urgency_table_insertion(self, ticket,response):
+        """
+        Function to mark the ticket as processed
+        """
+        try:
+            logging.info(f"Marking ticket as processed: {ticket['patient_id']}")
+            values = {k:v for k,v in response.items() if k in ["urgency","priority"]}
+            for key,value in values.items():
+                if value.lower() == "high":
+                    try:
+                        collection = self.common_utils.insert_into_urgency_table()
+                        collection.insert_one(response)
+                        #self.common_utils.close_connection()
+                        logging.info("Data inserted into urgency table")
+                        logging.info(f"Ticket id: {ticket['patient_id']}")
+                        logging.info(f"This is response: {response['urgency']}")
+                    except Exception as e:
+                        logging.error(f"Error in marking ticket as processed: {str(e)}")
+                        return f"Error: {str(e)}"
+                else:
+                    pass
+        except Exception as e:
+            logging.error(f"Error in marking ticket as processed: {str(e)}")
+            return f"Error: {str(e)}"
+
+
+
+
     def initiate_classification_process(self):
         """
         Function to initiate the classification process
@@ -163,8 +170,9 @@ class Gemini:
         try:
             ticket = ticket_1
             #self.mongo_connection()
-            #self.classify_ticket(ticket['ticket'])
+            response = self.classify_ticket(ticket['ticket'])    
             self.insert_into_database(ticket)
+            self.urgency_table_insertion(ticket,response)
             
         except Exception as e:
             logging.error(f"Error in classification process: {str(e)}")
