@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import List, Optional
 import google.generativeai as genai
 import json
+import warnings
+warnings.filterwarnings("ignore")
 
 # Ensure the src directory is in the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -23,7 +25,6 @@ load_dotenv(find_dotenv())
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 
-#TODO : Create ENUM classification input feeling ticks for predicting the feeling of the user
 class FeelingTicks(str,Enum):
     VERY_BAD = 0
     BAD = 1
@@ -48,7 +49,7 @@ class PatientCareCorrdinator(str,Enum):
     HOME_HEALTH_CARE = 5
     PAITENT_TRANSPORT_SERVICES = 6
     
-#TODO: Create using pydantic basemodel for the input data for the classification process
+
 class ClassificationInput(BaseModel):
     patient_id: int
     feeling: FeelingTicks
@@ -58,16 +59,6 @@ class ClassificationInput(BaseModel):
     confidence: float = Field(ge=0, le=1, description="Confidence score for the classification")
     key_information: List[str] = Field(description="List of key points extracted from the ticket")
     suggested_action: str = Field(description="Brief suggestion for handling the ticket")
-    
-#Example ticket for the classification process
-ticket_1 = {
-    "patient_id": 123,
-    "ticket": 'I am feeling very bad and need medical advice. I also need medical transport to the hospital.'
-}
-ticket_2 = {
-    "patient_id": 456,
-    "ticket": 'I am feeling dizzy, I think I have catched cold and I am having running nose.'
-}
 
 class Gemini:
     
@@ -93,7 +84,6 @@ class Gemini:
             logging.error(f"Error in gemini api: {str(e)}")
             return f"Error: {str(e)}"
 
-    #TODO: Apply Gemini flash 1.5 process for the classification process
     def classify_ticket(self, ticket: str) -> ClassificationInput:
         """
         Function to classify the ticket
@@ -112,7 +102,6 @@ class Gemini:
         return response
 
 
-#TODO: Insert that data into database matching on patient id column
     def insert_into_database(self,ticket):
         """
         Function to insert the response into the database
@@ -128,13 +117,14 @@ class Gemini:
             response = {key.replace("$", "_").replace(".", "_"): value for key, value in response.items()}
             logging.info(f"Response to be inserted into database: {response}")
             collection = self.common_utils.insert_main_table()
-            self.common_utils.close_connection()
+            collection.insert_one(response)
+            #self.common_utils.close_connection()
             logging.info(f"Response inserted into database: {response}")
         except Exception as e:
             logging.error(f"Error in inserting into database: {str(e)}")
             return f"Error: {str(e)}"
 
-#TODO: Mark ticket into the database as processed
+
     def urgency_table_insertion(self, ticket,response):
         """
         Function to mark the ticket as processed
@@ -147,7 +137,7 @@ class Gemini:
                     try:
                         collection = self.common_utils.insert_into_urgency_table()
                         collection.insert_one(response)
-                        #self.common_utils.close_connection()
+                        self.common_utils.close()
                         logging.info("Data inserted into urgency table")
                         logging.info(f"Ticket id: {ticket['patient_id']}")
                         logging.info(f"This is response: {response['urgency']}")
@@ -161,15 +151,11 @@ class Gemini:
             return f"Error: {str(e)}"
 
 
-
-
-    def initiate_classification_process(self):
+    def initiate_classification_process(self,ticket):
         """
         Function to initiate the classification process
         """
         try:
-            ticket = ticket_1
-            #self.mongo_connection()
             response = self.classify_ticket(ticket['ticket'])    
             self.insert_into_database(ticket)
             self.urgency_table_insertion(ticket,response)
@@ -178,7 +164,18 @@ class Gemini:
             logging.error(f"Error in classification process: {str(e)}")
             return f"Error: {str(e)}"
         
+        
 
 if __name__ == "__main__":
+    #Example ticket for the classification process
+    ticket_1 = {
+        "patient_id": 123,
+        "ticket": 'I am feeling very bad and need medical advice. I also need medical transport to the hospital.'
+    }
+    ticket_2 = {
+        "patient_id": 456,
+        "ticket": 'I am feeling dizzy, I think I have catched cold and I am having running nose.'
+    }
     gemini = Gemini()
-    gemini.initiate_classification_process()
+    gemini.initiate_classification_process(ticket_1)
+    
