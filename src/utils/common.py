@@ -1,3 +1,4 @@
+
 import os
 import sys
 import json
@@ -27,9 +28,9 @@ class CommonUtils:
         mongo_collection = os.getenv("URGENCY_TABLE")
         collection = self.db[mongo_collection]
         return collection
-        
-    def close_connection(self):
-        if self.client:
-            self.client.close()
+    
+    def close(self):
+        # Close the MongoDB client connection
+        self.client.close()
             
             
