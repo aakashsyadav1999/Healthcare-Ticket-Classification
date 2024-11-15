@@ -20,4 +20,15 @@ class GeminiConfig:
         self.gemini_model = GEMINI_MODEL
         
     
-    
+@dataclass
+class AWSConfig:
+    """
+    Class to hold the
+    configuration for the AWS
+    S3 bucket
+    """
+    def __init__(self):
+        
+        self.aws_access_key = AWS_ACCESS_KEY
+        self.aws_secret_key = AWS_SECRET_KEY
+        self.aws_bucket = AWS_BUCKET  
