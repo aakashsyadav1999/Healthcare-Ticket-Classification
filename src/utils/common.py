@@ -29,6 +29,12 @@ class CommonUtils:
         collection = self.db[mongo_collection]
         return collection
     
+    def insert_into_video_table(self):
+        # Use the initialized database connection
+        mongo_collection = os.getenv("MONGO_VIDEO_LINK_TABLE")
+        collection = self.db[mongo_collection]
+        return collection
+    
     def close(self):
         # Close the MongoDB client connection
         self.client.close()
