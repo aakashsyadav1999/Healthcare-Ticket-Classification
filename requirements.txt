@@ -12,3 +12,4 @@ python-dotenv
 pymssql
 pyodbc
 google-generativeai
+boto3==1.35.36
