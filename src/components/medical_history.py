@@ -4,6 +4,9 @@ from datetime import datetime
 import boto3
 import boto3.resources
 import json
+import streamlit as st
+import tempfile
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.entities.config import AWSConfig
@@ -112,10 +115,35 @@ class MedicalHistory:
                 logging.error("No URLs found.")
         except Exception as e:
             logging.error(f"An error occurred: {e}")
-                
+            
+        
+def streamlit_app():
+    st.title("Upload Medical History")
+    st.write("This is a simple application to upload medical history files.")
     
+    patient_id = st.text_input("Enter Patient ID")
+    if patient_id:
+        medical_history = MedicalHistory(patient_id)
+        jpg_file = st.file_uploader("Upload JPG file", type=["jpg"])
+        pdf_file = st.file_uploader("Upload PDF file", type=["pdf"])
+
+        if st.button("Upload"):
+            if jpg_file is not None and pdf_file is not None:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as jpg_temp:
+                    jpg_temp.write(jpg_file.getbuffer())
+                    jpg_path = jpg_temp.name
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as pdf_temp:
+                    pdf_temp.write(pdf_file.getbuffer())
+                    pdf_path = pdf_temp.name
+
+                medical_history.upload_medic_history({"jpg": jpg_path, "pdf": pdf_path})
+                st.success("Files uploaded successfully!")
+                medical_history.insert_into_db()
+                st.success("Data inserted into the database.")
+            else:
+                st.error("Please upload both JPG and PDF files.")
+
 if __name__ == "__main__":
-    medical_history = MedicalHistory("1234")
-    #medical_history.upload_medic_history({"jpg": r"D:\vscode\Healthcare-Ticket-Classification\download.jpg", "pdf": r"D:\vscode\Healthcare-Ticket-Classification\LastTenTransactions.pdf"})
-    #print(medical_history.get_all_object_urls())
-    medical_history.insert_into_db()
+    streamlit_app()
+    
