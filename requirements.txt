@@ -14,3 +14,6 @@ pyodbc
 google-generativeai
 boto3==1.35.36
 streamlit
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
