@@ -2,13 +2,13 @@ import csv
 from pymongo import MongoClient
 
 # MongoDB connection details
-mongo_host = 'mongodb+srv://skyrayzor1:SCg11DiLjLwBZCAS@health.pwap2.mongodb.net/'
+mongo_host = 'mongo host'
 mongo_port = 27017
-mongo_db = 'health_care'
+mongo_db = 'db_name'
 mongo_collection = 'data'
 
 # CSV file path
-csv_file_path = r'D:\vscode\Healthcare-Ticket-Classification\data\final_csv\final.csv'
+csv_file_path = r'your CSV file path'
 
 # Connect to MongoDB
 client = MongoClient(mongo_host, mongo_port)
