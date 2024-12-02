@@ -3,25 +3,33 @@ import time
 import json
 import os
 import sys
-from src.logger import logging
-from src.exceptions import CustomException
 import google.generativeai as genai
 from dotenv import load_dotenv, find_dotenv
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from src.logger import logging
+from src.exceptions import CustomException
 from src.utils.common import CommonUtils
-from src.entities.config import GeminiConfig
+from src.entities.config import GeminiConfig, AWSConfig
 load_dotenv(find_dotenv())
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 
 class AnalyseVideos:
     
-    def __init__(self, bucket_name, video_name, video_path):
-        self.bucket_name = bucket_name
-        self.video_name = video_name
+    def __init__(self, video_path):
         self.video_path = video_path
-        self.logger.info("Initialised AnalyseVideos class")
         self.google_api = GeminiConfig()
-        
+        self.bucket_name = AWSConfig().aws_bucket
+        self.client_resources = boto3.resource('s3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_KEY'))
+        logging.info("S3 client resources created")
+        self.client = boto3.client('s3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_KEY'))
+    
+    #Gemini API
     def gemini_api(self):
         """
         Apply gemini api and call it later in prompt section with image input for response.
@@ -32,47 +40,62 @@ class AnalyseVideos:
             genai.configure(api_key=self.gemini_api_obj)     #configure the api key
             gemini_model = genai.GenerativeModel(self.google_api.gemini_model) #get the model name from google api
             logging.info(f"Gemini model configured: {gemini_model}")
-            
             return gemini_model
         except Exception as e:
-            self.logger.error("Error while configuring gemini model")
-            raise CustomException("Error while configuring gemini model")
+            logging.error("Error while configuring gemini model")
+            raise (f"Error while configuring gemini model {e}")
     
-    
+    #Paient ID
     def patient_id(self):
         try:
             patient_id = input("Enter the patient id: ")
             return patient_id
         except Exception as e:
-            self.logger.error("Error while extracting patient id")
-            raise CustomException("Error while extracting patient id")
+            logging.error("Error while extracting patient id")
+            raise CustomException(f"Error while extracting patient id {e}")
     
+    #Upload video to S3 bucket
     def upload_video(self):
         try:
-            response = self.client.upload_file(self.video_path, self.bucket_name, self.video_name)
-            self.logger.info("Video uploaded")
+            patient_id = "0000"
+            print(patient_id)
+            video_folder = f"medical_history/{patient_id}/videos"
+            bucket = self.client_resources.Bucket(self.bucket_name)
+            print(bucket)
+            folder_exists = any(obj.key == video_folder for obj in bucket.objects.filter(Prefix=video_folder))
+            
+            if not folder_exists:
+                logging.info(f"Folder {video_folder} does not exist. Creating folder.")
+                self.client.put_object(Bucket=self.bucket_name, Key=f"{video_folder}/")
+                logging.info(f"Folder {video_folder} created successfully.")
+            else:
+                logging.info(f"Folder {video_folder} already exists.")
+            key = f"medical_history/{patient_id}/videos/{os.path.basename(self.video_path)}"
+            self.client_resources.Bucket(self.bucket_name).upload_file(self.video_path, key)
+            logging.info(f"Video uploaded to {key}")
         except Exception as e:
-            self.logger.error("Error while uploading video")
-            raise CustomException("Error while uploading video")
-        
+            logging.error("Error while uploading video")
+            raise CustomException(f"Error while uploading video {e}")
+
+    #Get video name
     def get_url(self):
         try:
             url = f"https://{self.bucket_name}.s3.amazonaws.com/{self.video_name}"
-            self.logger.info("Video url generated")
+            logging.info("Video url generated")
             return url
         except Exception as e:
-            self.logger.error("Error while generating video url")
-            raise CustomException("Error while generating video url")
+            logging.error("Error while generating video url")
+            raise CustomException(f"Error while generating video url {e}")
         
     def analyse_video(self):
         try:
             model = self.gemini_api()
             prompt = f"Analyse the video {self.get_url()}"
             response = model.generate_content(prompt, max_length=1000)
-            self.logger.info("Video analysis started")
+            logging.info("Video analysis started")
             return response
         except Exception as e:
-            self.logger.error("Error while analysing video")
+            logging.error("Error while analysing video")
             raise CustomException("Error while analysing video")
     
     def insert_into_database(self):
@@ -85,23 +108,22 @@ class AnalyseVideos:
             response = {key.replace("$", "_").replace(".", "_"): value for key, value in response.items()}
             collection = self.common_utils.insert_main_table()
             collection.insert_one(response)
-            self.logger.info("Response inserted into database")
+            logging.info("Response inserted into database")
         except Exception as e:
-            self.logger.error("Error while inserting response into database")
+            logging.error("Error while inserting response into database")
             raise CustomException("Error while inserting response into database")
-        
+
+    #Main function
     def main(self):
         try:
             self.upload_video()
-            self.insert_into_database()
-            self.logger.info("Video analysis completed")
+            #self.insert_into_database()
+            logging.error("Video analysis completed")
         except Exception as e:
-            self.logger.error("Error while analysing video")
-            raise CustomException("Error while analysing video")
+            logging.error("Error while analysing video")
+            raise CustomException(f"Error while analysing video {e}")
         
 if __name__ == "__main__":
-    bucket_name = input("Enter the bucket name: ")
-    video_name = input("Enter the video name: ")
-    video_path = input("Enter the video path: ")
-    analyse_videos = AnalyseVideos(bucket_name, video_name, video_path)
-    analyse_videos.main()
+    video_path = r'D:\vscode\Healthcare-Ticket-Classification\12731602_2160_3840_60fps.mp4'
+    AnalyseVideos(video_path).main()
+    
