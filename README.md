@@ -92,6 +92,11 @@ The project is designed to work efficiently in a scalable environment, leveragin
 - Automates the process of booking consultation slots.
 - Code: `src/components/slot_booking.py`
 
+### **Patient-Doctor Interaction and Medication Delivery Process**
+- The process of patient-doctor interaction and medication delivery is illustrated in the following diagram:
+![Patient-Doctor Interaction and Medication Delivery Process](architecture/Patient-Doctor%20Interaction%20and%20Medication%20Delivery%20Process.png)
+
+
 ### **Medical History**
 - Extracts and processes medical history data.
 - Code: `src/components/medical_history.py`
@@ -99,6 +104,11 @@ The project is designed to work efficiently in a scalable environment, leveragin
 ### **Video Analysis**
 - Analyzes videos for specific healthcare tasks.
 - Code: `src/components/analysing_videos.py`
+
+### **Data Processing in S3 Datalake**
+- The data processing workflow in the S3 datalake is depicted in the following diagram:
+![Data Processing in S3 Datalake](architecture/Data%20Processing%20in%20S3%20datalake.png)
+
 
 ---
 
