@@ -4,7 +4,7 @@
 ## Overview
 This project is an end-to-end solution for healthcare ticket classification and house premises treatment. The system uses machine learning models to classify healthcare-related tickets and perform associated tasks, such as slot booking, meeting room creation, medical history management, and video analysis.
 
-The project is designed to work efficiently in a scalable environment, leveraging technologies like Docker, MongoDB, Kafka, Airflow, and AWS for seamless integration and real-time processing.
+The project is designed to work efficiently in a scalable environment, leveraging technologies like Docker, MongoDB, Kafka and AWS for seamless integration and real-time processing.
 
 ---
 
