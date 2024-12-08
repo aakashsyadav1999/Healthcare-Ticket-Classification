@@ -83,6 +83,11 @@ The project is designed to work efficiently in a scalable environment, leveragin
 - Code: `src/components/classification_process.py`
 - In this section the ticket is classified using specific field of classification, as we all know the LLM model hallucinate, so tried to narrow down the classification options to minimum level.
 
+### **Architecture Diagram**
+- The architecture of the Healthcare Ticket Classification system is illustrated in the following diagram:
+![Healthcare Ticket Classification AI Flow](architecture/Healthcare%20Ticket%20Classification%20AI%20Flow.png)
+
+
 ### **Slot Booking**
 - Automates the process of booking consultation slots.
 - Code: `src/components/slot_booking.py`
