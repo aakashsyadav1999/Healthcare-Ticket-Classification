@@ -109,7 +109,9 @@ The project is designed to work efficiently in a scalable environment, leveragin
 - The data processing workflow in the S3 datalake is depicted in the following diagram:
 ![Data Processing in S3 Datalake](architecture/Data%20Processing%20in%20S3%20datalake.png)
 
-
+### **SQL Schema**
+- Desinged some sql shcema for better understanding of the data flow and understanding of data:
+![SQL Schema](architecture//sql_schema.png)
 ---
 
 ## Logging
